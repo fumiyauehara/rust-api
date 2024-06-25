@@ -1,81 +1,28 @@
-use std::sync::{Arc, Mutex};
-use std::{fs, thread};
-use std::sync::mpsc;
-use std::net::TcpListener;
-use std::net::TcpStream;
-use std::io::prelude::*;
+use rocket::{FromForm, get, launch, routes};
 
-fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-    let pool = ThreadPool::new(4);
-
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-        pool.execute(|| {
-            handle_connection(stream);
-        });
-    }
+#[get("/")]
+async fn index() -> &'static str {
+    "Hello, world!"
 }
 
-fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0; 1024];
-    stream.read(&mut buffer).unwrap();
-
-    let contents = fs::read_to_string("hello.html").unwrap();
-    let response = format!(
-        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
-        contents.len(),
-        contents
-    );
-
-    stream.write(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
+#[derive(FromForm)]
+struct ProductParams {
+    product_name: Option<String>,
+    category: Option<String>,
+    price: Option<u32>,
 }
 
-struct ThreadPool {
-    workers: Vec<Worker>,
-    sender: mpsc::Sender<Job>,
+#[get("/test?<params..>")]
+async fn test(params: ProductParams) -> String {
+    format!(
+        "Product name: {}, Category: {}, Price: {}",
+        params.product_name.unwrap_or_else(|| "N/A".to_string()),
+        params.category.unwrap_or_else(|| "N/A".to_string()),
+        params.price.map_or("N/A".to_string(), |p| p.to_string())
+    )
 }
 
-impl ThreadPool {
-    fn new(size: usize) -> ThreadPool {
-        let (sender, receiver) = mpsc::channel();
-        let receiver = Arc::new(Mutex::new(receiver));
-        let mut workers = Vec::with_capacity(size);
-
-        for id in 0..size {
-            workers.push(Worker::new(id, Arc::clone(&receiver)));
-        }
-
-        ThreadPool { workers, sender }
-    }
-
-    fn execute<F>(&self, f: F)
-        where
-            F: FnOnce() + Send + 'static,
-    {
-        let job = Box::new(f);
-        self.sender.send(job).unwrap();
-    }
+#[launch]
+fn rocket() -> _ {
+    rocket::build().mount("/", routes![index]).mount("/", routes![test])
 }
-
-struct Worker {
-    id: usize,
-    thread: Option<thread::JoinHandle<()>>,
-}
-
-impl Worker {
-    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
-        let thread = thread::spawn(move || loop {
-            let job = receiver.lock().unwrap().recv().unwrap();
-            job();
-        });
-
-        Worker {
-            id,
-            thread: Some(thread),
-        }
-    }
-}
-
-type Job = Box<dyn FnOnce() + Send + 'static>;
