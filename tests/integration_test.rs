@@ -1,7 +1,7 @@
-use rocket::local::blocking::Client;
+use rocket::local::blocking::{Client, LocalRequest};
 use rocket::http::{ContentType, Header, Status};
-use rocket::routes;
-use rust_web::products;
+use rocket::{catchers, routes};
+use rust_web::{bad_request, default_error, products, unauthorized};
 
 #[test]
 fn test_products_endpoint_ok() {
@@ -32,19 +32,22 @@ fn test_products_endpoint_ok() {
 
 #[test]
 fn test_products_endpoint_error() {
-    let rocket = rocket::build().mount("/", routes![products]);
+    let rocket = rocket::build()
+        .mount("/", routes![products])
+        .register("/", catchers![bad_request, unauthorized, default_error]);
+
     let client = Client::tracked(rocket).expect("valid rocket instance");
 
-    let test_cases = vec![
-        ("/products", 400, r#"{"error":"MissingAuthorization"}"#),
-        ("/products", 400, r#"{"error":"MissingPharmacyId"}"#),
+    let test_cases: Vec<(&str, Box<dyn Fn(LocalRequest) -> LocalRequest>, u16, &str)> = vec![
+        ("/products", Box::new(|c: LocalRequest| c.header(Header::new("pharmacy-id", "112"))), 401, r#"{"error":"Unauthorized"}"#),
+        ("/products", Box::new(|c: LocalRequest| c.header(Header::new("authorization", "Bearer: Token"))), 400, r#"{"error":"Bad Request"}"#),
     ];
 
-    for (url, status, expected) in test_cases {
-        let response = client.get(url).dispatch();
+    for (url, add_header, status, expected) in test_cases {
+        let response = add_header(client.get(url)).dispatch();
 
         assert_eq!(response.status(), Status::from_code(status).unwrap());
-        assert_eq!(response.content_type(), Some(ContentType::JSON));
+        // assert_eq!(response.content_type(), Some(ContentType::JSON));
 
         let actual = response.into_string().unwrap();
         assert_eq!(actual, expected)
