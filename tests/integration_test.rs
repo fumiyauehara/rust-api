@@ -1,57 +1,52 @@
 use rocket::local::blocking::Client;
 use rocket::http::{ContentType, Header, Status};
 use rocket::routes;
-use rocket::serde::json::{serde_json, Value};
 use rust_web::products;
 
 #[test]
-fn test_products_endpoint() {
+fn test_products_endpoint_ok() {
     // Rocketアプリケーションのインスタンスを作成
     let rocket = rocket::build().mount("/", routes![products]);
     let client = Client::tracked(rocket).expect("valid rocket instance");
 
-    // すべてのパラメータがある場合のテスト
-    let response = client.get("/products?product_name=Apple&category=Fruit&price=100").dispatch();
-    assert_eq!(response.status(), Status::Ok);
-    assert_eq!(response.content_type(), Some(ContentType::JSON));
+    let test_cases = vec![
+        ("/products", 200, r#"{"product_name":"N/A","category":"N/A","price":0}"#),
+        ("/products?product_name=Apple&category=Fruit&price=100", 200, r#"{"product_name":"Apple","category":"Fruit","price":100}"#),
+        ("/products?product_name=Banana&category=Fruit", 200, r#"{"product_name":"Banana","category":"Fruit","price":0}"#),
+        ("/products", 200, r#"{"product_name":"N/A","category":"N/A","price":0}"#),
+    ];
 
-    let body = response.into_string().unwrap();
-    let json: Value = serde_json::from_str(&body).unwrap();
+    for (url, status, expected) in test_cases {
+        let response = client.get(url)
+            .header(Header::new("authorization", "Bear Token"))
+            .header(Header::new("pharmacy-id", "112"))
+            .dispatch();
 
-    assert_eq!(json["product_name"], "Apple");
-    assert_eq!(json["category"], "Fruit");
-    assert_eq!(json["price"], 100);
-    assert_eq!(json["authorization"], "");
-    assert_eq!(json["x_custom_header"], "");
+        assert_eq!(response.status(), Status::from_code(status).unwrap());
+        assert_eq!(response.content_type(), Some(ContentType::JSON));
 
+        let actual = response.into_string().unwrap();
+        assert_eq!(actual, expected)
+    }
+}
 
-    let response = client.get("/products?product_name=Banana&category=Fruit").dispatch();
-    assert_eq!(response.status(), Status::Ok);
-    assert_eq!(response.content_type(), Some(ContentType::JSON));
+#[test]
+fn test_products_endpoint_error() {
+    let rocket = rocket::build().mount("/", routes![products]);
+    let client = Client::tracked(rocket).expect("valid rocket instance");
 
-    let body = response.into_string().unwrap();
-    let json: Value = serde_json::from_str(&body).unwrap();
+    let test_cases = vec![
+        ("/products", 400, r#"{"error":"MissingAuthorization"}"#),
+        ("/products", 400, r#"{"error":"MissingPharmacyId"}"#),
+    ];
 
-    assert_eq!(json["product_name"], "Banana");
-    assert_eq!(json["category"], "Fruit");
-    assert_eq!(json["price"], 0);
-    assert_eq!(json["authorization"], "");
-    assert_eq!(json["x_custom_header"], "");
+    for (url, status, expected) in test_cases {
+        let response = client.get(url).dispatch();
 
-    let response = client.get("/products")
-        .header(Header::new("content-type", "application/json"))
-        .header(Header::new("authorization", "Bearer token"))
-        .header(Header::new("x-custom-header", "fumiya-uehara"))
-        .dispatch();
-    assert_eq!(response.status(), Status::Ok);
-    assert_eq!(response.content_type(), Some(ContentType::JSON));
+        assert_eq!(response.status(), Status::from_code(status).unwrap());
+        assert_eq!(response.content_type(), Some(ContentType::JSON));
 
-    let body = response.into_string().unwrap();
-    let json: Value = serde_json::from_str(&body).unwrap();
-
-    assert_eq!(json["product_name"], "N/A");
-    assert_eq!(json["category"], "N/A");
-    assert_eq!(json["price"], 0);
-    assert_eq!(json["authorization"], "Bearer token");
-    assert_eq!(json["x_custom_header"], "fumiya-uehara");
+        let actual = response.into_string().unwrap();
+        assert_eq!(actual, expected)
+    }
 }

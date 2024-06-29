@@ -12,35 +12,40 @@ pub async fn index() -> &'static str {
 
 pub struct CustomHeaders {
     authorization: String,
-    x_custom_header: String,
+    pharmacy_id: i32,
 }
 
-// enum CustomHeaderError {
-//     MissingContentType,
-//     MissingAuthorization,
-//     MissingXCustomHeader,
-// }
+#[derive(Debug)]
+pub enum CustomHeaderError {
+    MissingAuthorization,
+    MissingPharmacyId,
+}
 
 #[derive(Serialize)]
-pub struct ProductsResponse {
+pub struct Product {
     product_name: String,
     category: String,
     price: u32,
-    authorization: String,
-    x_custom_header: String,
 }
 
 #[rocket::async_trait]
 impl <'r>FromRequest<'r> for CustomHeaders {
-    type Error = ();
+    type Error = CustomHeaderError;
 
     async fn from_request(request: &'r rocket::Request<'_>) -> rocket::request::Outcome<Self, Self::Error> {
-        let authorization = request.headers().get_one("Authorization").unwrap_or_default();
-        let x_custom_header = request.headers().get_one("X-Custom-Header").unwrap_or_default();
+        let authorization = match request.headers().get_one("Authorization") {
+            Some(authorization) => authorization.to_string(),
+            None => return rocket::request::Outcome::Error((rocket::http::Status::Unauthorized, CustomHeaderError::MissingAuthorization))
+        };
+
+        let pharmacy_id= match request.headers().get_one("pharmacy-id") {
+            Some(pharmacy_id) => pharmacy_id.parse().expect("pharmacy-id must be an integer"),
+            None => return rocket::request::Outcome::Error((rocket::http::Status::BadRequest, CustomHeaderError::MissingPharmacyId))
+        };
 
         rocket::request::Outcome::Success(CustomHeaders {
-            authorization: authorization.to_string(),
-            x_custom_header: x_custom_header.to_string(),
+            authorization,
+            pharmacy_id
         })
     }
 }
@@ -53,12 +58,10 @@ pub struct ProductParams {
 }
 
 #[get("/products?<params..>")]
-pub async fn products(headers: CustomHeaders, params: ProductParams) -> Json<ProductsResponse>{
-    Json(ProductsResponse {
+pub async fn products(headers: CustomHeaders, params: ProductParams) -> Json<Product>{
+    Json(Product {
         product_name: params.product_name.unwrap_or_else(|| "N/A".to_string()),
         category: params.category.unwrap_or_else(|| "N/A".to_string()),
-        price: params.price.unwrap_or(0),
-        authorization: headers.authorization.to_string(),
-        x_custom_header: headers.x_custom_header.to_string(),
+        price: params.price.unwrap_or(0)
     })
 }
