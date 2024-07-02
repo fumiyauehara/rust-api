@@ -1,15 +1,15 @@
 // src/lib.rs
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 
 use rocket::http::Status;
-use rocket::Request;
 use rocket::request::FromRequest;
 use rocket::serde::json::Json;
 use rocket::serde::Serialize;
-
+use rocket::Request;
 
 #[get("/")]
-pub async fn index() -> &'static str {
+pub async fn index(_headers: CustomHeaders) -> &'static str {
     "Hello, world!"
 }
 
@@ -28,7 +28,6 @@ pub struct ProductParams {
     pub price: Option<u32>,
 }
 
-
 // ヘッダ関連
 pub struct CustomHeaders {
     authorization: String,
@@ -39,20 +38,32 @@ pub struct CustomHeaders {
 impl<'r> FromRequest<'r> for CustomHeaders {
     type Error = CustomHeaderError;
 
-    async fn from_request(request: &'r rocket::Request<'_>) -> rocket::request::Outcome<Self, Self::Error> {
+    async fn from_request(
+        request: &'r rocket::Request<'_>,
+    ) -> rocket::request::Outcome<Self, Self::Error> {
         let authorization = match request.headers().get_one("Authorization") {
             Some(authorization) => authorization.to_string(),
-            None => return rocket::request::Outcome::Error((Status::Unauthorized, CustomHeaderError::MissingAuthorization))
+            None => {
+                return rocket::request::Outcome::Error((
+                    Status::Unauthorized,
+                    CustomHeaderError::MissingAuthorization,
+                ))
+            }
         };
 
-        let pharmacy_id= match request.headers().get_one("pharmacy-id") {
+        let pharmacy_id = match request.headers().get_one("pharmacy-id") {
             Some(pharmacy_id) => pharmacy_id.parse().expect("pharmacy-id must be an integer"),
-            None => return rocket::request::Outcome::Error((Status::BadRequest, CustomHeaderError::MissingPharmacyId))
+            None => {
+                return rocket::request::Outcome::Error((
+                    Status::BadRequest,
+                    CustomHeaderError::MissingPharmacyId,
+                ))
+            }
         };
 
         rocket::request::Outcome::Success(CustomHeaders {
             authorization,
-            pharmacy_id
+            pharmacy_id,
         })
     }
 }
@@ -91,10 +102,10 @@ pub fn default_error(status: Status, _request: &Request) -> Json<ErrorResponse> 
 }
 
 #[get("/products?<params..>")]
-pub async fn products(headers: CustomHeaders, params: ProductParams) -> Json<Product>{
+pub async fn products(_headers: CustomHeaders, params: ProductParams) -> Json<Product> {
     Json(Product {
         product_name: params.product_name.unwrap_or_else(|| "N/A".to_string()),
         category: params.category.unwrap_or_else(|| "N/A".to_string()),
-        price: params.price.unwrap_or(0)
+        price: params.price.unwrap_or(0),
     })
 }
