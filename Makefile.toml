@@ -1,0 +1,51 @@
+[tasks.create-migration-file]
+description = '''
+Up/Downのマイグレーションファイルを新規で作成します。
+
+実行方法は以下です。
+1) cargo make create_migration_file [migration_name]
+2) makers create_migration_file [migration_name]
+
+※ migration_name は任意の名前を指定してください。
+'''
+command = "docker"
+args = ["compose", "exec", "migration", "sqlx", "migrate", "add", "-r", "${@}"]
+
+[tasks.run-migration]
+description = '''
+作成済みのマイグレーションファイルをDBへ適用します。
+言い換えるのであればUPファイルを順番に適用します。
+
+実行方法は以下です。
+1) cargo make run_migration
+2) makers run_migration
+'''
+command = "docker"
+args = ["compose", "exec", "migration", "sqlx", "migrate", "run"]
+
+[tasks.rollback-migration]
+description = '''
+テーブルのスキーマバージョンを一つ戻します。
+全てのバージョンを戻すことはなく、直前の一つを戻すのみです。
+
+実行方法は以下です。
+1) cargo make rollback_migration
+2) makers rollback_migration
+'''
+command = "docker"
+args = ["compose", "exec", "migration", "sqlx", "migrate", "revert"]
+
+[tasks.redo-migration]
+description = '''
+Up -> Down -> Upの順番にマイグレーションを実施します。
+Up/Downが正しく適用できることを証明するためのテストの意味も大きいです。
+
+実行方法です。
+1) cargo make redo_migration
+2) makers redo_migration
+'''
+script = '''
+docker compose exec migration sqlx migrate run
+docker compose exec migration sqlx migrate revert
+docker compose exec migration sqlx migrate run
+'''
