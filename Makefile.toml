@@ -3,8 +3,8 @@ description = '''
 Up/Downのマイグレーションファイルを新規で作成します。
 
 実行方法は以下です。
-1) cargo make create_migration_file [migration_name]
-2) makers create_migration_file [migration_name]
+1) cargo make create-migration-file [migration_name]
+2) makers create-migration_file [migration_name]
 
 ※ migration_name は任意の名前を指定してください。
 '''
@@ -17,8 +17,8 @@ description = '''
 言い換えるのであればUPファイルを順番に適用します。
 
 実行方法は以下です。
-1) cargo make run_migration
-2) makers run_migration
+1) cargo make run-migration
+2) makers run-migration
 '''
 command = "docker"
 args = ["compose", "exec", "migration", "sqlx", "migrate", "run"]
@@ -29,8 +29,8 @@ description = '''
 全てのバージョンを戻すことはなく、直前の一つを戻すのみです。
 
 実行方法は以下です。
-1) cargo make rollback_migration
-2) makers rollback_migration
+1) cargo make rollback-migration
+2) makers rollback-migration
 '''
 command = "docker"
 args = ["compose", "exec", "migration", "sqlx", "migrate", "revert"]
@@ -41,8 +41,8 @@ Up -> Down -> Upの順番にマイグレーションを実施します。
 Up/Downが正しく適用できることを証明するためのテストの意味も大きいです。
 
 実行方法です。
-1) cargo make redo_migration
-2) makers redo_migration
+1) cargo make redo-migration
+2) makers redo-migration
 '''
 script = '''
 docker compose exec migration sqlx migrate run

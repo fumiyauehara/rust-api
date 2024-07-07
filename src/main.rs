@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 
-use rust_web::{bad_request, default_error, index, products, unauthorized};
+use rust_api::{bad_request, default_error, index, products, unauthorized};
 
 #[launch]
 fn rocket() -> _ {

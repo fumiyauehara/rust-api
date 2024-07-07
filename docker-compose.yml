@@ -29,7 +29,7 @@ services:
     tty: true
     environment:
       # DATABASE_URLはsqlxが参照する接続先の環境変数
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DB_URL_FROM_MIGRATION_CONTAINER}
     networks:
       backend:
         ipv4_address: ${SQLX_IP}

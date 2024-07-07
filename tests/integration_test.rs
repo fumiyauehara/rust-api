@@ -1,7 +1,7 @@
 use rocket::http::{ContentType, Header, Status};
 use rocket::local::blocking::{Client, LocalRequest};
 use rocket::{catchers, routes};
-use rust_web::{bad_request, default_error, products, unauthorized};
+use rust_api::{bad_request, default_error, products, unauthorized};
 
 #[test]
 fn test_products_endpoint_ok() {
