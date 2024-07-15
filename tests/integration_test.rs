@@ -1,12 +1,13 @@
 use rocket::http::{ContentType, Header, Status};
 use rocket::local::blocking::{Client, LocalRequest};
 use rocket::{catchers, routes};
-use rust_api::{bad_request, default_error, products, unauthorized};
+use rust_api::{bad_request, default_error, unauthorized};
+use rust_api::handlers::product::get_products;
 
 #[test]
 fn test_products_endpoint_ok() {
     // Rocketアプリケーションのインスタンスを作成
-    let rocket = rocket::build().mount("/", routes![products]);
+    let rocket = rocket::build().mount("/", routes![get_products]);
     let client = Client::tracked(rocket).expect("valid rocket instance");
 
     let test_cases = vec![
@@ -50,7 +51,7 @@ fn test_products_endpoint_ok() {
 #[test]
 fn test_products_endpoint_error() {
     let rocket = rocket::build()
-        .mount("/", routes![products])
+        .mount("/", routes![get_products])
         .register("/", catchers![bad_request, unauthorized, default_error]);
 
     let client = Client::tracked(rocket).expect("valid rocket instance");

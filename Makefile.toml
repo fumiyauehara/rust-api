@@ -1,3 +1,5 @@
+env_files = [".env"]
+
 [tasks.create-migration-file]
 description = '''
 Up/Downのマイグレーションファイルを新規で作成します。
@@ -49,3 +51,12 @@ docker compose exec migration sqlx migrate run
 docker compose exec migration sqlx migrate revert
 docker compose exec migration sqlx migrate run
 '''
+
+[tasks.diesel-setup]
+description = "Dieselの初期設定を行います。"
+command = "diesel"
+args = ["setup", "--database-url", "${DB_URL_FROM_APP}"]
+
+[tasks.diesel-sync]
+description = "DieselのスキーマファイルをDBと同期します。"
+script = "diesel print-schema --database-url ${DB_URL_FROM_APP} > src/schema.rs"
