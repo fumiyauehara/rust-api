@@ -4,8 +4,8 @@ use rocket::serde::Serialize;
 
 // ヘッダ関連
 pub struct CustomHeaders {
-    authorization: String,
-    pharmacy_id: i32,
+    _authorization: String,
+    pub(crate) pharmacy_id: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -42,7 +42,7 @@ impl<'r> FromRequest<'r> for CustomHeaders {
         };
 
         rocket::request::Outcome::Success(CustomHeaders {
-            authorization,
+            _authorization: authorization,
             pharmacy_id,
         })
     }

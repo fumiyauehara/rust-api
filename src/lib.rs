@@ -1,3 +1,6 @@
+use std::env;
+use diesel::{Connection, MysqlConnection};
+use dotenv::dotenv;
 use rocket::{catch, Request};
 use rocket::http::Status;
 use rocket::serde::json::Json;
@@ -5,6 +8,8 @@ use rocket::serde::Serialize;
 
 pub mod handlers;
 pub mod models;
+pub mod usecases;
+pub mod schema;
 
 
 #[derive(Debug, Serialize)]
@@ -31,4 +36,12 @@ pub fn default_error(status: Status, _request: &Request) -> Json<ErrorResponse> 
     Json(ErrorResponse {
         error: status.reason().unwrap_or("Unknown Error").to_string(),
     })
+}
+
+pub fn establish_connection() -> MysqlConnection {
+    dotenv().ok();
+    let database_url = env::var("DB_URL_FROM_APP")
+        .expect("DATABASE_URL must be set");
+    MysqlConnection::establish(&database_url)
+        .expect(&format!("Error connecting to {}", database_url))
 }

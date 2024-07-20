@@ -12,4 +12,3 @@ fn rocket() -> _ {
         .mount("/", routes![get_products])
         .register("/", catchers![bad_request, unauthorized, default_error])
 }
-
