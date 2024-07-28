@@ -3,7 +3,7 @@ version: '3.9'
 services:
   db:
     image: mysql:8.4.0
-    container_name: mysql
+    container_name: rust_api_db
     ports:
       - "${DB_PORT}:3306"
     environment:
@@ -19,13 +19,31 @@ services:
       backend:
         ipv4_address: ${DB_IP}
 
+  test_db:
+    image: mysql:8.4.0
+    container_name: rust_api_test_db
+    ports:
+      - "${TEST_DB_PORT}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${TEST_DB_NAME}
+      MYSQL_USER: ${TEST_DB_USER}
+      MYSQL_PASSWORD: ${TEST_DB_PASSWORD}
+      TZ: Asia/Tokyo
+    volumes:
+      - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      backend:
+        ipv4_address: ${TEST_DB_IP}
+
   migration:
     build:
       context: ./docker/migration
       dockerfile: Dockerfile
-    container_name: migration
+    container_name: rust_api_migration
     depends_on:
       - db
+      - test_db
     tty: true
     environment:
       # DATABASE_URLはsqlxが参照する接続先の環境変数

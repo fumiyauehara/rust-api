@@ -25,6 +25,14 @@ description = '''
 command = "docker"
 args = ["compose", "exec", "migration", "sqlx", "migrate", "run"]
 
+[tasks.run-migration-test-db]
+description = '''
+テスト用のDBにマイグレーションを適用します。
+'''
+command = "docker"
+args = ["compose", "exec", "migration", "sqlx", "migrate", "run", "--database-url", "${TEST_DB_URL_FROM_MIGRATION_CONTAINER}"]
+
+
 [tasks.rollback-migration]
 description = '''
 テーブルのスキーマバージョンを一つ戻します。
