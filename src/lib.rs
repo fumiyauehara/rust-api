@@ -8,6 +8,9 @@ pub mod api {
     pub mod models;
     pub mod usecases;
 }
+pub mod websocket {
+    pub mod handlers;
+}
 
 
 pub fn establish_connection() -> MysqlConnection {
