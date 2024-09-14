@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate rocket;
 
-use rust_api::{bad_request, default_error, unauthorized};
-use rust_api::handlers::index::index;
-use rust_api::handlers::product::get_products;
+use rust_api::api::handlers::index::index;
+use rust_api::api::handlers::product::get_products;
+use rust_api::api::handlers::error::{bad_request, unauthorized, default_error};
 
 #[launch]
 fn rocket() -> _ {

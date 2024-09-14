@@ -1,6 +1,6 @@
 use rocket::get;
 use rocket::serde::json::{Json};
-use crate::models::custom_header::CustomHeaders;
+use crate::api::models::custom_header::CustomHeaders;
 use crate::models::product::{Product, OptionalProduct, OptionalProductOmitPharmacyId};
 
 #[get("/products?<params..>")]
@@ -15,5 +15,5 @@ pub async fn get_products(headers: CustomHeaders, params: OptionalProductOmitPha
         pharmacy_id,
     };
 
-    Json(crate::usecases::product::get_products(opt_product))
+    Json(crate::api::usecases::product::get_products(opt_product))
 }
